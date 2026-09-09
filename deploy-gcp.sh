@@ -48,6 +48,12 @@ docker build -t "$REGISTRY_URL/backend:latest" .
 docker push "$REGISTRY_URL/backend:latest"
 cd ..
 
+# Production Configuration Variables (Supabase Session Pooler Port 5432 for Spring JPA)
+DB_URL="jdbc:postgresql://aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres?sslmode=require"
+DB_USER="postgres.pwfmafhtlvbrogfjcocs"
+DB_PASS='#u2yU4MBNazVfB!'
+JWT_SECRET="C3XhEpJMGFodmMirn0D29Ijp3xvZpobwip6hZQ69qSY="
+
 # Deploy Backend with unauthenticated access for API calls & Supabase Cloud PostgreSQL
 gcloud run deploy $BACKEND_SERVICE_NAME \
     --image "$REGISTRY_URL/backend:latest" \
@@ -60,7 +66,12 @@ gcloud run deploy $BACKEND_SERVICE_NAME \
     --cpu 1 \
     --min-instances 0 \
     --max-instances 5 \
-    --set-env-vars "SPRING_PROFILES_ACTIVE=prod"
+    --set-env-vars "SPRING_PROFILES_ACTIVE=prod" \
+    --set-env-vars "SPRING_DATASOURCE_URL=$DB_URL" \
+    --set-env-vars "SPRING_DATASOURCE_USERNAME=$DB_USER" \
+    --set-env-vars "^:^SPRING_DATASOURCE_PASSWORD=$DB_PASS" \
+    --set-env-vars "APP_JWT_SECRET=$JWT_SECRET" \
+    --set-env-vars "APP_CORS_ALLOWED_ORIGINS=*"
 
 BACKEND_URL=$(gcloud run services describe $BACKEND_SERVICE_NAME --platform managed --region $REGION --format 'value(status.url)')
 echo "✅ Backend Live URL: $BACKEND_URL"
