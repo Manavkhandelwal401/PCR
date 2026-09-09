@@ -326,11 +326,18 @@ public class AuthController {
             org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
             headers.set("Accept", "application/json");
 
+            String effectiveRedirectUri = request.get("redirect_uri");
+            if (effectiveRedirectUri == null || effectiveRedirectUri.isBlank()) {
+                effectiveRedirectUri = githubRedirectUri;
+            }
+
             java.util.Map<String, String> body = new java.util.HashMap<>();
             body.put("client_id", githubClientId);
             body.put("client_secret", githubClientSecret);
             body.put("code", code);
-            body.put("redirect_uri", githubRedirectUri);
+            if (effectiveRedirectUri != null && !effectiveRedirectUri.isBlank()) {
+                body.put("redirect_uri", effectiveRedirectUri);
+            }
             body.put("state", clientState);
 
             org.springframework.http.HttpEntity<java.util.Map<String, String>> tokenEntity = new org.springframework.http.HttpEntity<>(body, headers);

@@ -103,12 +103,12 @@ gcloud run deploy $FRONTEND_SERVICE_NAME \
 FRONTEND_URL=$(gcloud run services describe $FRONTEND_SERVICE_NAME --platform managed --region $REGION --format 'value(status.url)')
 echo "✅ Frontend Live URL: $FRONTEND_URL"
 
-# 6. Update Backend CORS to allow Frontend URL
-echo "--> Updating Backend CORS to whitelist Frontend URL ($FRONTEND_URL)..."
+# 6. Update Backend CORS and OAuth Redirect URI to match Frontend URL
+echo "--> Updating Backend CORS and OAuth Redirect URI for Frontend URL ($FRONTEND_URL)..."
 gcloud run services update $BACKEND_SERVICE_NAME \
     --platform managed \
     --region $REGION \
-    --update-env-vars "APP_CORS_ALLOWED_ORIGINS=$FRONTEND_URL"
+    --update-env-vars "APP_CORS_ALLOWED_ORIGINS=$FRONTEND_URL,GITHUB_OAUTH_REDIRECT_URI=$FRONTEND_URL/repositories"
 
 echo ""
 echo "=========================================================="

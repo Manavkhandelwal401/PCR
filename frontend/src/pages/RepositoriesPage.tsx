@@ -224,6 +224,7 @@ export const RepositoriesPage: React.FC = () => {
         return apiClient.post('/auth/github/callback', {
           code,
           state: returnedState,
+          redirect_uri: GITHUB_OAUTH_REDIRECT_URI,
         });
       })
         .then((response) => {
