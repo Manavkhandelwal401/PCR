@@ -27,6 +27,7 @@ COPY --from=builder /app/target/*.jar app.jar
 
 # Cloud Run dynamic PORT injection
 ENV PORT=8080
+ENV SPRING_PROFILES_ACTIVE=prod
 EXPOSE 8080
 
-ENTRYPOINT ["sh", "-c", "java -Djava.security.egd=file:/dev/./urandom -Dserver.port=${PORT:-8080} -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "java -Djava.security.egd=file:/dev/./urandom -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-prod} -Dserver.port=${PORT:-8080} -jar app.jar"]

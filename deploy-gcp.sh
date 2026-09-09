@@ -60,7 +60,7 @@ gcloud run deploy $BACKEND_SERVICE_NAME \
     --cpu 1 \
     --min-instances 0 \
     --max-instances 5 \
-    --set-env-vars "SPRING_DATASOURCE_URL=jdbc:postgresql://db.pwfmafhtlvbrogfjcocs.supabase.co:5432/postgres?sslmode=require,SPRING_DATASOURCE_USERNAME=postgres,SPRING_DATASOURCE_PASSWORD=#u2yU4MBNazVfB!,SPRING_KAFKA_LISTENER_AUTO_STARTUP=false"
+    --set-env-vars "SPRING_PROFILES_ACTIVE=prod"
 
 BACKEND_URL=$(gcloud run services describe $BACKEND_SERVICE_NAME --platform managed --region $REGION --format 'value(status.url)')
 echo "✅ Backend Live URL: $BACKEND_URL"
