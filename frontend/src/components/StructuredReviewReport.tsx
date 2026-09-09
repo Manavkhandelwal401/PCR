@@ -8,6 +8,7 @@ import {
   Layers,
   FileCode2,
   Hash,
+  Gauge,
 } from 'lucide-react';
 
 interface FindingItem {
@@ -42,13 +43,14 @@ interface StructuredReviewReportProps {
  * - "#### 2. Syntax & Compilation:"
  * - "#### 3. Clean Code & Performance:"
  * - "#### 4. Security & Vulnerabilities:"
+ * - "#### 5. Quality Scorecard & Assessment Breakdown:"
  * - Also supports newer headings like "🔴 Critical", "🟠 Security", etc.
  */
 export const StructuredReviewReport: React.FC<StructuredReviewReportProps> = ({ content }) => {
   const parsedSections = useMemo<SectionData[]>(() => {
     if (!content || !content.trim()) return [];
 
-    // Strip HTML comments, engine tags, and metadata artifacts (e.g. _<!-- [Engine: v2.2] -->_)
+    // Strip HTML comments, engine tags, and metadata artifacts (e.g. _<!-- [Engine: v2.3] -->_)
     const cleanedContent = content
       .replace(/<!--[\s\S]*?-->/g, '')
       .replace(/_?<!--\s*\[Engine:[^\]]+\]\s*-->_?/gi, '')
@@ -109,6 +111,9 @@ export const StructuredReviewReport: React.FC<StructuredReviewReportProps> = ({ 
         badgeColor = 'bg-[#122318] text-emerald-300 border-[#1f3f2a]';
       } else if (lowerHeader.includes('performance') || lowerHeader.includes('clean code')) {
         icon = <Zap className="h-4 w-4 text-emerald-400" />;
+        badgeColor = 'bg-[#122318] text-emerald-300 border-[#1f3f2a]';
+      } else if (lowerHeader.includes('scorecard') || lowerHeader.includes('assessment') || lowerHeader.includes('breakdown')) {
+        icon = <Gauge className="h-4 w-4 text-emerald-400" />;
         badgeColor = 'bg-[#122318] text-emerald-300 border-[#1f3f2a]';
       }
 
@@ -251,7 +256,7 @@ export const StructuredReviewReport: React.FC<StructuredReviewReportProps> = ({ 
         </div>
 
         <div className="flex items-center gap-3 text-xs font-mono text-[#6A8070]">
-          <span>{parsedSections.length} Inspection Dimensions Verified</span>
+          <span>4 Inspection Dimensions Verified</span>
         </div>
       </div>
 

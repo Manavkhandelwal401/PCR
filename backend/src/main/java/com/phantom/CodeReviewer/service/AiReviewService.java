@@ -45,7 +45,7 @@ public class AiReviewService {
     @Value("${groq.max-response-tokens:600}")
     private int maxResponseTokens;
 
-    public static final String ENGINE_VERSION = "v2.2";
+    public static final String ENGINE_VERSION = "v2.3";
 
     public AiReviewService(
             RestTemplate restTemplate,
@@ -558,51 +558,151 @@ public class AiReviewService {
     }
 
     // =====================================================================
-    // STANDARDIZED METRICS CALCULATION (Deterministic & Structured)
+    // STANDARDIZED METRICS CALCULATION (Deterministic & Structured 4-Dimension Weighted Model)
     // =====================================================================
     private AiReviewResponse calculateFinalMetricsFromFindings(String mergedComment, List<FindingDetail> findings) {
-        if (findings == null || findings.isEmpty()) {
-            return new AiReviewResponse(mergedComment, "GOOD", 10, true, Collections.emptyList());
-        }
+        // Explicitly verify presence of all 4 dimensions
+        List<FindingDetail> safeFindings = findings != null ? findings : Collections.emptyList();
 
-        long criticalSec = findings.stream().filter(f -> "SECURITY".equals(f.category()) && "CRITICAL".equals(f.severity())).count();
-        long highSec = findings.stream().filter(f -> "SECURITY".equals(f.category()) && "HIGH".equals(f.severity())).count();
-        long modSec = findings.stream().filter(f -> "SECURITY".equals(f.category()) && "MODERATE".equals(f.severity())).count();
+        List<FindingDetail> logicFindings = safeFindings.stream().filter(f -> "LOGIC".equalsIgnoreCase(f.category())).toList();
+        List<FindingDetail> syntaxFindings = safeFindings.stream().filter(f -> "SYNTAX".equalsIgnoreCase(f.category())).toList();
+        List<FindingDetail> perfFindings = safeFindings.stream().filter(f -> "PERFORMANCE".equalsIgnoreCase(f.category())).toList();
+        List<FindingDetail> secFindings = safeFindings.stream().filter(f -> "SECURITY".equalsIgnoreCase(f.category())).toList();
 
-        long syntaxDefects = findings.stream().filter(f -> "SYNTAX".equals(f.category())).count();
-        long logicDefects = findings.stream().filter(f -> "LOGIC".equals(f.category())).count();
-        long perfDefects = findings.stream().filter(f -> "PERFORMANCE".equals(f.category())).count();
+        // Calculate individual dimension scores (0.0 to 10.0)
+        double scoreLogic = calculateDimensionScore(logicFindings);
+        double scoreSyntax = calculateDimensionScore(syntaxFindings);
+        double scorePerformance = calculateDimensionScore(perfFindings);
+        double scoreSecurity = calculateDimensionScore(secFindings);
 
-        String severity;
-        int qualityRating;
+        // Weighted overall score:
+        // Logic: 30%, Syntax: 20%, Performance: 20%, Security: 30%
+        double rawWeightedScore = (0.30 * scoreLogic) + (0.20 * scoreSyntax) + (0.20 * scorePerformance) + (0.30 * scoreSecurity);
+        double finalScore = Math.round(rawWeightedScore * 10.0) / 10.0;
+        finalScore = Math.max(0.0, Math.min(10.0, finalScore));
 
-        if (criticalSec > 0) {
-            // Uncompromising critical security vulnerabilities (RCE, injection, auth bypass)
-            severity = "CRITICAL";
-            qualityRating = Math.max(1, 3 - (int) (criticalSec - 1));
-        } else if (highSec > 0 || syntaxDefects > 0 || logicDefects >= 1) {
-            // High severity: syntax/compile errors, high-risk security, or any genuine logic bugs
-            severity = "HIGH";
-            int totalDefects = (int) (highSec + syntaxDefects + logicDefects);
-            qualityRating = Math.max(3, 6 - totalDefects);
-        } else if (modSec > 0 || perfDefects >= 2) {
-            // Moderate severity: moderate security flaw or multiple performance bottlenecks
-            severity = "MODERATE";
-            qualityRating = Math.max(4, 7 - (int) (modSec + perfDefects / 2));
-        } else if (perfDefects == 1) {
-            // Low-Moderate: single performance/resource inefficiency
-            severity = "MODERATE";
-            qualityRating = 8;
+        // Determine Final Severity from the most serious verified issue
+        long totalCritical = safeFindings.stream().filter(f -> "CRITICAL".equalsIgnoreCase(f.severity())).count();
+        long totalHigh = safeFindings.stream().filter(f -> "HIGH".equalsIgnoreCase(f.severity())).count();
+        long totalMod = safeFindings.stream().filter(f -> "MODERATE".equalsIgnoreCase(f.severity()) || "MEDIUM".equalsIgnoreCase(f.severity())).count();
+        long totalLow = safeFindings.stream().filter(f -> "LOW".equalsIgnoreCase(f.severity())).count();
+
+        String finalSeverity;
+        if (totalCritical > 0) {
+            finalSeverity = "CRITICAL";
+        } else if (totalHigh > 0) {
+            finalSeverity = "HIGH";
+        } else if (totalMod > 0) {
+            finalSeverity = "MODERATE";
+        } else if (totalLow > 0) {
+            finalSeverity = "LOW";
         } else {
-            severity = "GOOD";
-            qualityRating = 10;
+            finalSeverity = "GOOD";
         }
 
-        System.out.println("--> [AI-REVIEW-METRICS] Structured Assessment: CriticalSec=" + criticalSec +
-                ", HighSec=" + highSec + ", Syntax=" + syntaxDefects + ", Logic=" + logicDefects +
-                ", Perf=" + perfDefects + ", ModSec=" + modSec + " => Severity=" + severity + ", QualityRating=" + qualityRating + "/10");
+        // Quality rating normalized descriptor
+        String qualityTier;
+        if (finalScore >= 9.0) {
+            qualityTier = "Excellent / Production-ready";
+        } else if (finalScore >= 8.0) {
+            qualityTier = "Good";
+        } else if (finalScore >= 7.0) {
+            qualityTier = "Acceptable";
+        } else if (finalScore >= 6.0) {
+            qualityTier = "Needs improvement";
+        } else if (finalScore >= 4.0) {
+            qualityTier = "Poor";
+        } else {
+            qualityTier = "Critical / Unsafe";
+        }
 
-        return new AiReviewResponse(mergedComment, severity, qualityRating, true, findings);
+        // Integer qualityRating field for entity compatibility (bounded 1-10, or 0 if empty)
+        int integerRating = (int) Math.round(finalScore);
+        if (integerRating < 1 && finalScore > 0) integerRating = 1;
+        if (integerRating > 10) integerRating = 10;
+        if (safeFindings.isEmpty() && finalScore >= 9.9) integerRating = 10;
+
+        // Construct transparent mathematical breakdown block
+        String scoreBreakdown = String.format(
+                Locale.US,
+                "\n\n#### 5. Quality Scorecard & Assessment Breakdown:\n" +
+                "- **Overall Severity**: %s\n" +
+                "- **Quality Rating**: %.1f/10 (%s)\n\n" +
+                "**Dimension Scores**:\n" +
+                "- **Logic / Correctness (30%%)**: %.1f/10 (%d finding%s)\n" +
+                "- **Syntax / Compilation (20%%)**: %.1f/10 (%d finding%s)\n" +
+                "- **Performance / Clean Code (20%%)**: %.1f/10 (%d finding%s)\n" +
+                "- **Security / Vulnerabilities (30%%)**: %.1f/10 (%d finding%s)\n\n" +
+                "**Weighted Score Calculation**:\n" +
+                "`0.30*(%.1f) + 0.20*(%.1f) + 0.20*(%.1f) + 0.30*(%.1f) = %.1f/10`",
+                finalSeverity,
+                finalScore,
+                qualityTier,
+                scoreLogic, logicFindings.size(), logicFindings.size() == 1 ? "" : "s",
+                scoreSyntax, syntaxFindings.size(), syntaxFindings.size() == 1 ? "" : "s",
+                scorePerformance, perfFindings.size(), perfFindings.size() == 1 ? "" : "s",
+                scoreSecurity, secFindings.size(), secFindings.size() == 1 ? "" : "s",
+                scoreLogic, scoreSyntax, scorePerformance, scoreSecurity, finalScore
+        );
+
+        String finalMergedComment = mergedComment + scoreBreakdown;
+
+        System.out.println("--> [AI-REVIEW-METRICS] Four-Dimension Evaluation: " +
+                "Logic=" + String.format(Locale.US, "%.1f", scoreLogic) + " (" + logicFindings.size() + " findings), " +
+                "Syntax=" + String.format(Locale.US, "%.1f", scoreSyntax) + " (" + syntaxFindings.size() + " findings), " +
+                "Perf=" + String.format(Locale.US, "%.1f", scorePerformance) + " (" + perfFindings.size() + " findings), " +
+                "Security=" + String.format(Locale.US, "%.1f", scoreSecurity) + " (" + secFindings.size() + " findings) " +
+                "=> Weighted=" + String.format(Locale.US, "%.1f", finalScore) + "/10 (Stored Int=" + integerRating + "), Final Severity=" + finalSeverity);
+
+        return new AiReviewResponse(finalMergedComment, finalSeverity, integerRating, true, safeFindings);
+    }
+
+    /**
+     * Calculates an independent category score from 0.0 to 10.0 based on findings severity and progressive impact:
+     * - No findings / clean: 10.0
+     * - LOW findings only: 8.0 - 9.0
+     * - MODERATE / MEDIUM findings: 6.0 - 7.9
+     * - HIGH findings: 4.0 - 5.9
+     * - CRITICAL findings: 0.0 - 3.9
+     * Multiple findings reduce the category score progressively, without raw counts alone dictating the score.
+     */
+    private double calculateDimensionScore(List<FindingDetail> categoryFindings) {
+        if (categoryFindings == null || categoryFindings.isEmpty()) {
+            return 10.0;
+        }
+
+        long criticalCount = categoryFindings.stream().filter(f -> "CRITICAL".equalsIgnoreCase(f.severity())).count();
+        long highCount = categoryFindings.stream().filter(f -> "HIGH".equalsIgnoreCase(f.severity())).count();
+        long modCount = categoryFindings.stream().filter(f -> "MODERATE".equalsIgnoreCase(f.severity()) || "MEDIUM".equalsIgnoreCase(f.severity())).count();
+        long lowCount = categoryFindings.stream().filter(f -> "LOW".equalsIgnoreCase(f.severity())).count();
+
+        double score;
+        if (criticalCount > 0) {
+            // CRITICAL: range 0.0 - 3.9. Base 3.5; progressive penalty for additional critical / high findings down to 1.0 minimum
+            double penalty = ((criticalCount - 1) * 0.8) + (highCount * 0.4) + (modCount * 0.2);
+            score = Math.max(1.0, 3.5 - penalty);
+            score = Math.min(3.9, score);
+        } else if (highCount > 0) {
+            // HIGH: range 4.0 - 5.9. Base 5.5; progressive penalty down to 4.0 minimum
+            // E.g. 2 HIGH findings => 5.5 - 0.5 = 5.0/10. 4 HIGH findings => 5.5 - 1.5 = 4.0/10.
+            double penalty = ((highCount - 1) * 0.5) + (modCount * 0.2) + (lowCount * 0.1);
+            score = Math.max(4.0, 5.5 - penalty);
+            score = Math.min(5.9, score);
+        } else if (modCount > 0) {
+            // MODERATE: range 6.0 - 7.9. Base 7.5; progressive penalty down to 6.0 minimum
+            double penalty = ((modCount - 1) * 0.4) + (lowCount * 0.1);
+            score = Math.max(6.0, 7.5 - penalty);
+            score = Math.min(7.9, score);
+        } else if (lowCount > 0) {
+            // LOW: range 8.0 - 9.0. Base 8.8; progressive penalty down to 8.0 minimum
+            double penalty = (lowCount - 1) * 0.25;
+            score = Math.max(8.0, 8.8 - penalty);
+            score = Math.min(9.0, score);
+        } else {
+            score = 10.0;
+        }
+
+        return Math.round(score * 10.0) / 10.0;
     }
 
     // =====================================================================
