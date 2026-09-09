@@ -53,6 +53,8 @@ DB_URL="jdbc:postgresql://db.pwfmafhtlvbrogfjcocs.supabase.co:5432/postgres?sslm
 DB_USER="postgres"
 DB_PASS='#u2yU4MBNazVfB!'
 JWT_SECRET="C3XhEpJMGFodmMirn0D29Ijp3xvZpobwip6hZQ69qSY="
+GITHUB_CLIENT_ID="Ov23liz7VeylLeQwQIjk"
+GITHUB_CLIENT_SECRET="7cb961f73166a9fd4a72f137bbfcaa3ecd1fd1ec"
 
 # Deploy Backend with unauthenticated access for API calls & Supabase Cloud PostgreSQL
 gcloud run deploy $BACKEND_SERVICE_NAME \
@@ -71,6 +73,8 @@ gcloud run deploy $BACKEND_SERVICE_NAME \
     --set-env-vars "SPRING_DATASOURCE_USERNAME=$DB_USER" \
     --set-env-vars "^:^SPRING_DATASOURCE_PASSWORD=$DB_PASS" \
     --set-env-vars "APP_JWT_SECRET=$JWT_SECRET" \
+    --set-env-vars "GITHUB_OAUTH_CLIENT_ID=$GITHUB_CLIENT_ID" \
+    --set-env-vars "GITHUB_OAUTH_CLIENT_SECRET=$GITHUB_CLIENT_SECRET" \
     --set-env-vars "APP_CORS_ALLOWED_ORIGINS=*"
 
 BACKEND_URL=$(gcloud run services describe $BACKEND_SERVICE_NAME --platform managed --region $REGION --format 'value(status.url)')
