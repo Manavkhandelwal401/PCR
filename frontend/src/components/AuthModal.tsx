@@ -187,7 +187,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   const GITHUB_OAUTH_CLIENT_ID = import.meta.env.VITE_GITHUB_OAUTH_CLIENT_ID || 'Ov23liz7VeylLeQwQIjk';
-  const GITHUB_OAUTH_REDIRECT_URI = import.meta.env.VITE_GITHUB_OAUTH_REDIRECT_URI || 'http://localhost:5173/repositories';
+  const GITHUB_OAUTH_REDIRECT_URI = import.meta.env.VITE_GITHUB_OAUTH_REDIRECT_URI || 
+    (typeof window !== 'undefined' ? `${window.location.origin}/repositories` : 'http://localhost:5173/repositories');
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '94794083637-iahffrbnpq1ohgflq9tg1ac9tlef7qea.apps.googleusercontent.com';
 
   const handleOAuthConnect = async (provider: 'google' | 'github') => {

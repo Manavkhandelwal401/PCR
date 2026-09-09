@@ -28,7 +28,8 @@ const GITHUB_APP_URL = 'https://github.com/apps/phantom-code-reviewer';
 // These values must match the OAuth app configuration.  Production builds set
 // VITE_GITHUB_OAUTH_*; the defaults keep the checked-out app usable locally.
 const GITHUB_OAUTH_CLIENT_ID = import.meta.env.VITE_GITHUB_OAUTH_CLIENT_ID || 'Ov23liz7VeylLeQwQIjk';
-const GITHUB_OAUTH_REDIRECT_URI = import.meta.env.VITE_GITHUB_OAUTH_REDIRECT_URI || 'http://localhost:5173/repositories';
+const GITHUB_OAUTH_REDIRECT_URI = import.meta.env.VITE_GITHUB_OAUTH_REDIRECT_URI || 
+  (typeof window !== 'undefined' ? `${window.location.origin}/repositories` : 'http://localhost:5173/repositories');
 
 // Official GitHub Mark SVG
 const GithubIcon: React.FC<{ className?: string }> = ({ className = 'h-4 w-4' }) => (
