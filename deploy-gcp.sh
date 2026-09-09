@@ -54,6 +54,8 @@ gcloud run deploy $BACKEND_SERVICE_NAME \
     --platform managed \
     --region $REGION \
     --allow-unauthenticated \
+    --port 8080 \
+    --timeout 300s \
     --memory 1Gi \
     --cpu 1 \
     --min-instances 0 \
