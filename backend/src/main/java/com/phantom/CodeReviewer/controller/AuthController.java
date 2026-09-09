@@ -67,7 +67,7 @@ public class AuthController {
 
         String otp = authService.generateAndSendOtp(email);
         return ResponseEntity.ok(AuthResponse.ofSuccess(
-                "OTP sent successfully. Please check your inbox.",
+                null,
                 null,
                 email,
                 null
