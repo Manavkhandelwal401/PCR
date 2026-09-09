@@ -82,13 +82,21 @@ export const StructuredReviewReport: React.FC<StructuredReviewReportProps> = ({ 
       sections.push(currentSection);
     }
 
+    // Filter out Section 5 (Quality Scorecard & Assessment Breakdown / Weighted calculation)
+    const displaySections = sections.filter(
+      (s) =>
+        !s.rawHeader.toLowerCase().includes('scorecard') &&
+        !s.rawHeader.toLowerCase().includes('assessment breakdown') &&
+        !s.rawHeader.toLowerCase().includes('weighted score')
+    );
+
     // If no markdown headings were detected, treat the entire text as one section
-    if (sections.length === 0 && content.trim()) {
+    if (displaySections.length === 0 && content.trim()) {
       const bulletLines = lines.filter((l) => l.trim().length > 0);
-      sections.push({ rawHeader: 'Findings & Review Diagnostics', lines: bulletLines });
+      displaySections.push({ rawHeader: 'Findings & Review Diagnostics', lines: bulletLines });
     }
 
-    return sections.map((sec, idx) => {
+    return displaySections.map((sec, idx) => {
       const cleanHeader = sec.rawHeader
         .replace(/^#+\s*/, '')
         .replace(/^\d+\.\s*/, '')
@@ -235,134 +243,68 @@ export const StructuredReviewReport: React.FC<StructuredReviewReportProps> = ({ 
   }
 
   return (
-    <div className="space-y-6">
-      {/* 1. Executive Findings Summary Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-lg border border-[#1b3324] bg-[#09150d]">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-xs font-semibold uppercase tracking-wider text-[#A5B8AA]">
-            Executive Overview:
-          </span>
-          <span
-            className={`font-mono text-xs px-2.5 py-0.5 rounded border ${
-              totalFindings === 0
-                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                : 'bg-[#14281b] text-emerald-300 border-[#254d34] font-semibold'
-            }`}
-          >
-            {totalFindings === 0
-              ? '✅ 0 Active Defects Detected'
-              : `${totalFindings} ${totalFindings === 1 ? 'Defect' : 'Defects'} Requiring Action`}
-          </span>
-        </div>
+    <div className="font-mono text-xs text-[#C7D7CB] space-y-6">
+      {parsedSections.map((sec) => (
+        <div key={sec.id} className="space-y-2">
+          {/* Clean Section Heading */}
+          <div className="text-[#EEF4EF] font-semibold text-xs uppercase tracking-wider pb-1 border-b border-[#1b3324]/80">
+            {sec.title}
+          </div>
 
-        <div className="flex items-center gap-3 text-xs font-mono text-[#6A8070]">
-          <span>4 Inspection Dimensions Verified</span>
-        </div>
-      </div>
-
-      {/* 2. Structured Sections (Clean Unified List - No Individual Boxes) */}
-      <div className="space-y-4">
-        {parsedSections.map((sec) => (
-          <div
-            key={sec.id}
-            className="rounded-lg border border-[#1b3324] bg-[#07120a] overflow-hidden"
-          >
-            {/* Section Header */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-[#1b3324] bg-[#0d1a11]">
-              <div className="flex items-center gap-2.5">
-                {sec.icon}
-                <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-[#EEF4EF]">
-                  {sec.title}
-                </h3>
+          {/* Section Items - Clean Monospace Layout */}
+          <div className="space-y-3 pt-1">
+            {sec.allClean ? (
+              <div className="text-[#6A8070] pl-2">
+                No defects, violations, or security hazards detected in this category.
               </div>
-
-              {sec.allClean ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Clean Pass
-                </span>
-              ) : (
-                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-mono border ${sec.badgeColor}`}>
-                  {sec.items.filter((i) => !i.isCleanPass).length} Findings
-                </span>
-              )}
-            </div>
-
-            {/* Clean Seamless Findings List */}
-            <div className="divide-y divide-[#15271c]/70">
-              {sec.allClean ? (
-                <div className="flex items-center gap-3 p-4 text-emerald-400/90 font-mono text-xs">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                  <span>Verified: No defects, violations, or security hazards detected in this category.</span>
-                </div>
-              ) : (
-                sec.items.map((item) => {
-                  if (item.isCleanPass) {
-                    return (
-                      <div
-                        key={item.id}
-                        className="flex items-center gap-2.5 px-5 py-2.5 font-mono text-xs text-[#7A9180]"
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                        <span>{item.raw.replace(/^[✅\s]+/, '')}</span>
-                      </div>
-                    );
-                  }
-
+            ) : (
+              sec.items.map((item) => {
+                if (item.isCleanPass) {
                   return (
-                    <div
-                      key={item.id}
-                      className="px-5 py-3.5 hover:bg-[#0c1810]/60 transition-colors space-y-1.5"
-                    >
-                      {/* Line Number, Target & Severity Badges */}
-                      {(item.lineNumber || item.target || item.severity) && (
-                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                          {item.lineNumber && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-[#14281b] text-emerald-300 border border-[#254d34]">
-                              <Hash className="h-3 w-3 text-emerald-400" />
-                              {item.lineNumber}
-                            </span>
-                          )}
-                          {item.severity && (
-                            <span className="font-mono text-[11px] font-medium tracking-wide text-[#A5B8AA] flex items-center gap-1.5">
-                              <span className="text-[#6A8070] text-[10px] uppercase">SEVERITY:</span>
-                              <span className="text-[#EEF4EF] font-semibold">{item.severity}</span>
-                            </span>
-                          )}
-                          {item.target && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono text-[#8CA392] bg-[#0c1a11] border border-[#1b3324]">
-                              <FileCode2 className="h-3 w-3 text-emerald-400" />
-                              {item.target}
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Defect Description (Clean, Readable Sans-Serif) */}
-                      <div className="flex items-start gap-2.5 text-[13px] leading-relaxed text-[#D2DFD5]">
-                        <span className="text-emerald-400 font-bold select-none leading-5">•</span>
-                        <div className="flex-1 space-y-1">
-                          <p className="text-[#EEF4EF]">
-                            {item.defect ? item.defect : item.raw}
-                          </p>
-
-                          {/* Impact Note (Clean neutral monospace pill, no yellow warning) */}
-                          {item.impact && (
-                            <p className="text-xs font-mono text-[#9AB3A1] pt-0.5">
-                              <span className="text-emerald-400 font-semibold mr-1.5">Impact:</span>
-                              {item.impact}
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                    <div key={item.id} className="text-[#6A8070] pl-2">
+                      {item.raw.replace(/^[✅\s]+/, '')}
                     </div>
                   );
-                })
-              )}
-            </div>
+                }
+
+                return (
+                  <div key={item.id} className="pl-2 space-y-1">
+                    {/* Header: Line and Severity in plain clean text */}
+                    {(item.lineNumber || item.severity || item.target) && (
+                      <div className="text-[11px] text-[#A5B8AA] flex items-center gap-2">
+                        {item.lineNumber && (
+                          <span className="text-emerald-400 font-semibold">{item.lineNumber}</span>
+                        )}
+                        {item.severity && (
+                          <span>
+                            [Severity: <span className="text-[#EEF4EF] font-semibold">{item.severity}</span>]
+                          </span>
+                        )}
+                        {item.target && !item.lineNumber && (
+                          <span className="text-[#8CA392]">{item.target}</span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Description - Normal Monospace Text */}
+                    <div className="text-[#D2DFD5] leading-relaxed pl-2">
+                      {item.defect ? item.defect : item.raw}
+                    </div>
+
+                    {/* Impact - Clean Monospace Note */}
+                    {item.impact && (
+                      <div className="text-[#8CA392] text-[11px] pl-2">
+                        <span className="text-[#A5B8AA]">Impact: </span>
+                        {item.impact}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 };

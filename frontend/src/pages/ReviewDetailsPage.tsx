@@ -220,11 +220,11 @@ export const ReviewDetailsPage: React.FC = () => {
       {/* 3. Main Inspection Sections */}
       <div className="space-y-6">
         {/* AI Analysis Section */}
-        <div className="rounded-[8px] border border-[#1b3324] bg-[#0c1811] overflow-hidden shadow-sm">
-          <div className="flex items-center justify-between border-b border-[#1b3324] px-5 py-3.5 bg-[#0e1c14]">
+        <div className="rounded-[8px] border border-[#1b3324] bg-[#050e08] overflow-hidden shadow-sm">
+          <div className="flex items-center justify-between border-b border-[#1b3324] px-4 py-2 bg-[#09150d] text-[#A5B8AA] select-none">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-[#15803d]" />
-              <h2 className="font-mono text-xs font-semibold uppercase tracking-wider text-[#EEF4EF]">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+              <h2 className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[#EEF4EF]">
                 AI Multi-Agent Inspection Report
               </h2>
             </div>
@@ -233,7 +233,7 @@ export const ReviewDetailsPage: React.FC = () => {
             </span>
           </div>
 
-          <div className="p-6">
+          <div className="p-5 font-mono text-xs">
             {review.status === 'PROCESSING' ? (
               <div className="flex items-center gap-3 py-4 text-[#A5B8AA] font-mono text-xs">
                 <RefreshCw className="h-4 w-4 animate-spin text-[#15803d]" />

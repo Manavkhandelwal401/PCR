@@ -600,6 +600,15 @@ public class AiReviewService {
             finalSeverity = "GOOD";
         }
 
+        // Strict Alignment: Quality score CANNOT be 9 or 10 if there are CRITICAL or HIGH issues
+        if (totalCritical > 0) {
+            finalScore = Math.min(finalScore, 4.0);
+        } else if (totalHigh > 0) {
+            finalScore = Math.min(finalScore, 6.0);
+        } else if (totalMod > 0) {
+            finalScore = Math.min(finalScore, 8.0);
+        }
+
         // Quality rating normalized descriptor
         String qualityTier;
         if (finalScore >= 9.0) {
@@ -608,9 +617,9 @@ public class AiReviewService {
             qualityTier = "Good";
         } else if (finalScore >= 7.0) {
             qualityTier = "Acceptable";
-        } else if (finalScore >= 6.0) {
+        } else if (finalScore >= 5.0) {
             qualityTier = "Needs improvement";
-        } else if (finalScore >= 4.0) {
+        } else if (finalScore >= 3.0) {
             qualityTier = "Poor";
         } else {
             qualityTier = "Critical / Unsafe";
@@ -622,27 +631,24 @@ public class AiReviewService {
         if (integerRating > 10) integerRating = 10;
         if (safeFindings.isEmpty() && finalScore >= 9.9) integerRating = 10;
 
-        // Construct transparent mathematical breakdown block
+        // Construct clean scorecard without raw formula math
         String scoreBreakdown = String.format(
                 Locale.US,
                 "\n\n#### 5. Quality Scorecard & Assessment Breakdown:\n" +
                 "- **Overall Severity**: %s\n" +
                 "- **Quality Rating**: %.1f/10 (%s)\n\n" +
                 "**Dimension Scores**:\n" +
-                "- **Logic / Correctness (30%%)**: %.1f/10 (%d finding%s)\n" +
-                "- **Syntax / Compilation (20%%)**: %.1f/10 (%d finding%s)\n" +
-                "- **Performance / Clean Code (20%%)**: %.1f/10 (%d finding%s)\n" +
-                "- **Security / Vulnerabilities (30%%)**: %.1f/10 (%d finding%s)\n\n" +
-                "**Weighted Score Calculation**:\n" +
-                "`0.30*(%.1f) + 0.20*(%.1f) + 0.20*(%.1f) + 0.30*(%.1f) = %.1f/10`",
+                "- **Logic / Correctness**: %.1f/10 (%d finding%s)\n" +
+                "- **Syntax / Compilation**: %.1f/10 (%d finding%s)\n" +
+                "- **Performance / Clean Code**: %.1f/10 (%d finding%s)\n" +
+                "- **Security / Vulnerabilities**: %.1f/10 (%d finding%s)",
                 finalSeverity,
                 finalScore,
                 qualityTier,
                 scoreLogic, logicFindings.size(), logicFindings.size() == 1 ? "" : "s",
                 scoreSyntax, syntaxFindings.size(), syntaxFindings.size() == 1 ? "" : "s",
                 scorePerformance, perfFindings.size(), perfFindings.size() == 1 ? "" : "s",
-                scoreSecurity, secFindings.size(), secFindings.size() == 1 ? "" : "s",
-                scoreLogic, scoreSyntax, scorePerformance, scoreSecurity, finalScore
+                scoreSecurity, secFindings.size(), secFindings.size() == 1 ? "" : "s"
         );
 
         String finalMergedComment = mergedComment + scoreBreakdown;
@@ -729,6 +735,8 @@ public class AiReviewService {
             acquireRateLimitBudget(totalEstimatedBudget);
 
             String currentKey = groqApiKeys[Math.abs(keyIndex.getAndIncrement() % groqApiKeys.length)].trim();
+            String maskedKey = currentKey.length() > 8 ? currentKey.substring(0, 7) + "..." + currentKey.substring(currentKey.length() - 4) : "INVALID_LEN";
+            System.out.println("--> [AI-REVIEW] Using API Key [" + maskedKey + "] (total keys: " + groqApiKeys.length + ")");
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -791,8 +799,9 @@ public class AiReviewService {
                         throw new RuntimeException("Interrupted during rate limit backoff", ie);
                     }
                 } else {
-                    System.err.println("--> [AI-REVIEW] Groq HTTP error " + statusCode + ": " + httpEx.getResponseBodyAsString());
-                    throw new RuntimeException("AI provider HTTP error (" + statusCode + ")", httpEx);
+                    String errBody = httpEx.getResponseBodyAsString();
+                    System.err.println("--> [AI-REVIEW] Groq HTTP error " + statusCode + ": " + errBody);
+                    throw new RuntimeException("AI provider HTTP error (" + statusCode + "): " + errBody, httpEx);
                 }
             } catch (Exception e) {
                 System.err.println("--> [AI-REVIEW] Groq invocation failed (attempt " + (attempt + 1) + "): " + e.getMessage());
