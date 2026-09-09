@@ -101,29 +101,29 @@ public class AuthService {
                 <head>
                   <meta charset="utf-8">
                   <style>
-                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #050d08; color: #EEF4EF; margin: 0; padding: 24px; }
-                    .card { max-width: 480px; margin: 0 auto; background: #0c1811; border: 1px solid #1b4d2e; border-radius: 12px; padding: 32px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0f17; color: #e2e8f0; margin: 0; padding: 24px; }
+                    .card { max-width: 480px; margin: 0 auto; background: #111827; border: 1px solid #1f2937; border-radius: 10px; padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
                     .header { text-align: center; margin-bottom: 24px; }
-                    .logo { font-size: 24px; font-weight: bold; color: #22c55e; letter-spacing: 2px; }
-                    .title { font-size: 18px; color: #ffffff; margin-top: 12px; }
-                    .text { font-size: 14px; color: #9cb5a2; line-height: 1.6; margin-bottom: 24px; }
-                    .otp-box { background: #122519; border: 1px solid #22c55e; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 24px; }
-                    .otp { font-family: monospace; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #4ade80; }
-                    .footer { font-size: 11px; color: #52705a; text-align: center; border-top: 1px solid #1b3324; padding-top: 16px; }
+                    .logo { font-size: 20px; font-weight: 700; color: #f9fafb; letter-spacing: 2.5px; }
+                    .title { font-size: 16px; color: #9ca3af; margin-top: 8px; font-weight: 500; }
+                    .text { font-size: 14px; color: #9ca3af; line-height: 1.6; margin-bottom: 20px; }
+                    .otp-box { background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 18px; text-align: center; margin-bottom: 24px; }
+                    .otp { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #ffffff; }
+                    .footer { font-size: 11px; color: #6b7280; text-align: center; border-top: 1px solid #1f2937; padding-top: 16px; margin-top: 12px; }
                   </style>
                 </head>
                 <body>
                   <div class="card">
                     <div class="header">
-                      <div class="logo">⚡ PHANTOM CODE REVIEWER</div>
+                      <div class="logo">PHANTOM CODE REVIEWER</div>
                       <div class="title">Verify Your Email Address</div>
                     </div>
                     <p class="text">Hello,</p>
-                    <p class="text">Welcome to PCR! Please use the 6-digit verification code below to complete your registration. This code will expire in <strong>5 minutes</strong>.</p>
+                    <p class="text">Welcome to PCR. Please use the 6-digit verification code below to complete your registration. This code will expire in <strong>5 minutes</strong>.</p>
                     <div class="otp-box">
                       <span class="otp">%s</span>
                     </div>
-                    <p class="text">If you did not request this verification code, please ignore this message.</p>
+                    <p class="text">If you did not request this verification code, please ignore this email.</p>
                     <div class="footer">
                       &copy; 2026 Phantom Code Reviewer (PCR). Automated Invariant & Security Auditing.
                     </div>
