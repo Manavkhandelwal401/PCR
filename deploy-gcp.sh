@@ -48,9 +48,9 @@ docker build -t "$REGISTRY_URL/backend:latest" .
 docker push "$REGISTRY_URL/backend:latest"
 cd ..
 
-# Production Configuration Variables (Supabase Session Pooler Port 5432 for Spring JPA)
-DB_URL="jdbc:postgresql://aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres?sslmode=require"
-DB_USER="postgres.pwfmafhtlvbrogfjcocs"
+# Production Configuration Variables (Supabase Direct Connection as per dashboard)
+DB_URL="jdbc:postgresql://db.pwfmafhtlvbrogfjcocs.supabase.co:5432/postgres?sslmode=require"
+DB_USER="postgres"
 DB_PASS='#u2yU4MBNazVfB!'
 JWT_SECRET="C3XhEpJMGFodmMirn0D29Ijp3xvZpobwip6hZQ69qSY="
 
