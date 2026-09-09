@@ -20,8 +20,15 @@ public class AuthService {
 
     private final SecretKey secretKey;
     private final long tokenValidityMs = 1000L * 60 * 60 * 24; // 24 hours
+    private final org.springframework.mail.javamail.JavaMailSender mailSender;
 
-    public AuthService(@Value("${app.jwt.secret:${APP_JWT_SECRET:}}") String jwtSecret) {
+    @Value("${spring.mail.username:manavkhandelwal06@gmail.com}")
+    private String mailFrom;
+
+    public AuthService(
+            @Value("${app.jwt.secret:${APP_JWT_SECRET:}}") String jwtSecret,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) org.springframework.mail.javamail.JavaMailSender mailSender
+    ) {
         if (jwtSecret == null || jwtSecret.trim().length() < 32) {
             throw new IllegalStateException(
                     "CRITICAL SECURITY CONFIGURATION ERROR: 'app.jwt.secret' (or environment variable 'APP_JWT_SECRET') " +
@@ -29,6 +36,7 @@ public class AuthService {
             );
         }
         this.secretKey = Keys.hmacShaKeyFor(jwtSecret.trim().getBytes(StandardCharsets.UTF_8));
+        this.mailSender = mailSender;
     }
 
     /**
@@ -51,7 +59,7 @@ public class AuthService {
     public record OtpRecord(String otp, long expiryTimeMillis) {}
 
     /**
-     * Generates a 6-digit OTP, stores it in memory (5 mins expiry), and prints to console.
+     * Generates a 6-digit OTP, sends real email via Gmail SMTP, and stores in memory (5 mins expiry).
      */
     public String generateAndSendOtp(String email) {
         // Generate 6-digit OTP (e.g. 100000 - 999999)
@@ -62,11 +70,75 @@ public class AuthService {
         otpStore.put(email.toLowerCase().trim(), new OtpRecord(otp, expiry));
 
         System.out.println("=================================================");
-        System.out.println(" [PCR AUTH SIMULATOR] Generated OTP for: " + email);
+        System.out.println(" [PCR AUTH SERVICE] Generated OTP for: " + email);
         System.out.println(" --> CODE: " + otp + " (Expires in 5 minutes)");
         System.out.println("=================================================");
 
+        // Send real email via JavaMailSender
+        sendOtpEmail(email, otp);
+
         return otp;
+    }
+
+    private void sendOtpEmail(String recipientEmail, String otp) {
+        if (mailSender == null) {
+            System.err.println("Notice: JavaMailSender not configured, OTP printed to console.");
+            return;
+        }
+
+        try {
+            jakarta.mail.internet.MimeMessage message = mailSender.createMimeMessage();
+            org.springframework.mail.javamail.MimeMessageHelper helper =
+                    new org.springframework.mail.javamail.MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(mailFrom, "Phantom Code Reviewer (PCR)");
+            helper.setTo(recipientEmail);
+            helper.setSubject("Your PCR Verification Code: " + otp);
+
+            String htmlBody = """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta charset="utf-8">
+                  <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #050d08; color: #EEF4EF; margin: 0; padding: 24px; }
+                    .card { max-width: 480px; margin: 0 auto; background: #0c1811; border: 1px solid #1b4d2e; border-radius: 12px; padding: 32px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+                    .header { text-align: center; margin-bottom: 24px; }
+                    .logo { font-size: 24px; font-weight: bold; color: #22c55e; letter-spacing: 2px; }
+                    .title { font-size: 18px; color: #ffffff; margin-top: 12px; }
+                    .text { font-size: 14px; color: #9cb5a2; line-height: 1.6; margin-bottom: 24px; }
+                    .otp-box { background: #122519; border: 1px solid #22c55e; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 24px; }
+                    .otp { font-family: monospace; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #4ade80; }
+                    .footer { font-size: 11px; color: #52705a; text-align: center; border-top: 1px solid #1b3324; padding-top: 16px; }
+                  </style>
+                </head>
+                <body>
+                  <div class="card">
+                    <div class="header">
+                      <div class="logo">⚡ PHANTOM CODE REVIEWER</div>
+                      <div class="title">Verify Your Email Address</div>
+                    </div>
+                    <p class="text">Hello,</p>
+                    <p class="text">Welcome to PCR! Please use the 6-digit verification code below to complete your registration. This code will expire in <strong>5 minutes</strong>.</p>
+                    <div class="otp-box">
+                      <span class="otp">%s</span>
+                    </div>
+                    <p class="text">If you did not request this verification code, please ignore this message.</p>
+                    <div class="footer">
+                      &copy; 2026 Phantom Code Reviewer (PCR). Automated Invariant & Security Auditing.
+                    </div>
+                  </div>
+                </body>
+                </html>
+                """.formatted(otp);
+
+            helper.setText(htmlBody, true);
+
+            mailSender.send(message);
+            System.out.println("--> [PCR-MAIL] Successfully dispatched OTP email to: " + recipientEmail);
+        } catch (Exception e) {
+            System.err.println("--> [PCR-MAIL-ERROR] Failed to send email to " + recipientEmail + ": " + e.getMessage());
+        }
     }
 
     /**
