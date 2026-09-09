@@ -48,7 +48,7 @@ docker build -t "$REGISTRY_URL/backend:latest" .
 docker push "$REGISTRY_URL/backend:latest"
 cd ..
 
-# Deploy Backend with unauthenticated access for API calls
+# Deploy Backend with unauthenticated access for API calls & Supabase Cloud PostgreSQL
 gcloud run deploy $BACKEND_SERVICE_NAME \
     --image "$REGISTRY_URL/backend:latest" \
     --platform managed \
@@ -59,7 +59,8 @@ gcloud run deploy $BACKEND_SERVICE_NAME \
     --memory 1Gi \
     --cpu 1 \
     --min-instances 0 \
-    --max-instances 5
+    --max-instances 5 \
+    --set-env-vars "SPRING_DATASOURCE_URL=jdbc:postgresql://db.pwfmafhtlvbrogfjcocs.supabase.co:5432/postgres?sslmode=require,SPRING_DATASOURCE_USERNAME=postgres,SPRING_DATASOURCE_PASSWORD=#u2yU4MBNazVfB!,SPRING_KAFKA_LISTENER_AUTO_STARTUP=false"
 
 BACKEND_URL=$(gcloud run services describe $BACKEND_SERVICE_NAME --platform managed --region $REGION --format 'value(status.url)')
 echo "✅ Backend Live URL: $BACKEND_URL"
