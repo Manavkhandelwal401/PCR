@@ -21,11 +21,8 @@ echo "=========================================================="
 # 1. Set active GCP Project
 gcloud config set project $PROJECT_ID
 
-# 2. Enable Required APIs (Cloud Run, Artifact Registry, Cloud Build)
-echo "--> [1/4] Enabling required Google Cloud APIs..."
-gcloud services enable run.googleapis.com \
-    artifactregistry.googleapis.com \
-    cloudbuild.googleapis.com
+# 2. Required Google Cloud APIs are already enabled
+echo "--> [1/4] Google Cloud APIs ready..."
 
 # 3. Create Artifact Registry repository if not present
 echo "--> [2/4] Setting up Artifact Registry..."
