@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="pcr-emerald-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="40%" stop-color="#22c55e" />
+      <stop offset="85%" stop-color="#15803d" />
+      <stop offset="100%" stop-color="#0f4a25" />
+    </linearGradient>
+    <linearGradient id="pcr-light-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FEF08A" />
+      <stop offset="50%" stop-color="#FDE68A" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+    <linearGradient id="pcr-white-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="60%" stop-color="#EEF4EF" />
+      <stop offset="100%" stop-color="#D5E2D8" />
+    </linearGradient>
+    <radialGradient id="pcr-bg-gradient" cx="30%" cy="20%" r="85%">
+      <stop offset="0%" stop-color="#102b1b" />
+      <stop offset="55%" stop-color="#09180f" />
+      <stop offset="100%" stop-color="#030805" />
+    </radialGradient>
+    <linearGradient id="pcr-squircle-border" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.7" />
+      <stop offset="50%" stop-color="#15803d" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#064e3b" stop-opacity="0.8" />
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="94" height="94" rx="24" fill="url(#pcr-bg-gradient)" stroke="url(#pcr-squircle-border)" stroke-width="3.2" />
+  <path d="M 22 6 Q 50 12 78 6" stroke="rgba(255,255,255,0.18)" stroke-width="1.5" stroke-linecap="round" />
+  <g>
+    <!-- Letter P -->
+    <path d="M 20 74 L 20 28 Q 20 25 24 25 L 31 25 Q 38 25 38 34 Q 38 43 31 43 L 20 43" stroke="url(#pcr-emerald-grad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 26 66 L 26 31 Q 26 30 28 30 L 31 30 Q 33 30 33 34 Q 33 38 30 38 L 26 38" stroke="url(#pcr-white-grad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+    <path d="M 20 62 Q 20 72 25 72 Q 31 72 35 66 L 41 54" stroke="url(#pcr-light-gold)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Letter C -->
+    <path d="M 59 34 Q 51 24 41 27 Q 31 31 31 49 Q 31 67 41 71 Q 52 75 60 64" stroke="url(#pcr-emerald-grad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 56 39 Q 50 31 42 34 Q 37 37 37 49 Q 37 61 42 64 Q 50 67 56 59" stroke="url(#pcr-white-grad)" stroke-width="2" stroke-linecap="round" opacity="0.9" />
+    <path d="M 44 49 Q 54 49 61 38" stroke="url(#pcr-light-gold)" stroke-width="3.2" stroke-linecap="round" />
+
+    <!-- Letter R -->
+    <path d="M 64 74 L 64 28 Q 64 25 68 25 L 75 25 Q 82 25 82 34 Q 82 43 75 43 L 64 43" stroke="url(#pcr-emerald-grad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 72 43 L 83 71 Q 84 74 87 74" stroke="url(#pcr-white-grad)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 70 47 L 79 70" stroke="url(#pcr-light-gold)" stroke-width="2.4" stroke-linecap="round" />
+    <path d="M 68 31 L 73 31 Q 76 31 76 34 Q 76 37 73 37 L 68 37" stroke="url(#pcr-white-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+  </g>
+</svg>

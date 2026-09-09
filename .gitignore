@@ -1,0 +1,38 @@
+# Maven target directories
+target/
+**/target/
+
+# Node dependencies and build
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+dist-ssr/
+**/dist-ssr/
+
+# Archives & Temp files
+*.zip
+*.tar.gz
+*.log
+logs/
+*.local
+
+# IDEs & System files
+.idea/
+**/.idea/
+.vscode/
+**/.vscode/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+Thumbs.db
+
+# Private credentials & local secrets
+github-oauth.properties
+**/github-oauth.properties
+local.properties
+**/local.properties
+*.pem
+.env
+.env.local
