@@ -37,10 +37,15 @@ gcloud artifacts repositories create pcr-repo \
 
 REGISTRY_URL="$REGION-docker.pkg.dev/$PROJECT_ID/pcr-repo"
 
-# 4. Build and Deploy Backend
+# Configure Docker credentials for Google Artifact Registry
+echo "--> Configuring Docker authentication for $REGION-docker.pkg.dev..."
+gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
+
+# 4. Build and Deploy Backend via Docker directly
 echo "--> [3/4] Building and Deploying Backend to Cloud Run..."
 cd backend
-gcloud builds submit --tag "$REGISTRY_URL/backend:latest" .
+docker build -t "$REGISTRY_URL/backend:latest" .
+docker push "$REGISTRY_URL/backend:latest"
 cd ..
 
 # Deploy Backend with unauthenticated access for API calls
@@ -57,12 +62,13 @@ gcloud run deploy $BACKEND_SERVICE_NAME \
 BACKEND_URL=$(gcloud run services describe $BACKEND_SERVICE_NAME --platform managed --region $REGION --format 'value(status.url)')
 echo "✅ Backend Live URL: $BACKEND_URL"
 
-# 5. Build and Deploy Frontend
+# 5. Build and Deploy Frontend via Docker directly
 echo "--> [4/4] Building and Deploying Frontend to Cloud Run..."
 cd frontend
-gcloud builds submit \
-    --tag "$REGISTRY_URL/frontend:latest" \
-    --build-arg "VITE_API_URL=$BACKEND_URL/api/v1" .
+docker build \
+    --build-arg "VITE_API_URL=$BACKEND_URL/api/v1" \
+    -t "$REGISTRY_URL/frontend:latest" .
+docker push "$REGISTRY_URL/frontend:latest"
 cd ..
 
 gcloud run deploy $FRONTEND_SERVICE_NAME \
