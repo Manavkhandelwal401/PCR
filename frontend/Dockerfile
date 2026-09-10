@@ -28,7 +28,8 @@ COPY nginx.conf /etc/nginx/templates/default.conf.template
 
 # Cloud Run dynamic PORT injection
 ENV PORT=80
-ENV BACKEND_UPSTREAM_URL=http://localhost:8080
+ENV BACKEND_UPSTREAM_URL=https://pcr-backend-u36rneughq-el.a.run.app
+ENV BACKEND_HOST=pcr-backend-u36rneughq-el.a.run.app
 
-# Substitute PORT in nginx template automatically at startup
-CMD ["/bin/sh", "-c", "sed -i \"s/listen 80;/listen ${PORT};/g\" /etc/nginx/templates/default.conf.template && envsubst '$$BACKEND_UPSTREAM_URL' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"]
+# Substitute PORT, BACKEND_UPSTREAM_URL, and BACKEND_HOST in nginx template automatically at startup
+CMD ["/bin/sh", "-c", "export BACKEND_HOST=$(echo $BACKEND_UPSTREAM_URL | sed -e 's|^[^/]*//||' -e 's|/.*$||') && sed -i \"s/listen 80;/listen ${PORT};/g\" /etc/nginx/templates/default.conf.template && envsubst '$$BACKEND_UPSTREAM_URL $$BACKEND_HOST' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"]
