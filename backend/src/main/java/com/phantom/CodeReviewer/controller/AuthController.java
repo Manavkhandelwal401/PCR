@@ -340,16 +340,18 @@ public class AuthController {
             }
             body.put("state", clientState);
 
+            log.info("Exchanging GitHub OAuth code with effectiveRedirectUri: {}", effectiveRedirectUri);
             org.springframework.http.HttpEntity<java.util.Map<String, String>> tokenEntity = new org.springframework.http.HttpEntity<>(body, headers);
             ResponseEntity<java.util.Map> tokenResponse = restTemplate.postForEntity(tokenUrl, tokenEntity, java.util.Map.class);
 
             java.util.Map tokenMap = tokenResponse.getBody();
+            log.info("GitHub OAuth token exchange response keys: {}", tokenMap != null ? tokenMap.keySet() : "null");
             if (tokenMap == null || !tokenMap.containsKey("access_token")) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(java.util.Map.of(
-                        "error", tokenMap != null && tokenMap.containsKey("error_description")
-                                ? tokenMap.get("error_description")
-                                : "Failed to obtain GitHub access token"
-                ));
+                String errorDesc = (tokenMap != null && tokenMap.containsKey("error_description"))
+                        ? String.valueOf(tokenMap.get("error_description"))
+                        : "Failed to obtain GitHub access token: " + tokenMap;
+                log.warn("GitHub OAuth token failure: {}", errorDesc);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(java.util.Map.of("error", errorDesc));
             }
 
             String accessToken = (String) tokenMap.get("access_token");

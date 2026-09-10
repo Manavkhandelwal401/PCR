@@ -294,7 +294,11 @@ export const RepositoriesPage: React.FC = () => {
         })
         .catch((err) => {
           console.error('Backend OAuth endpoint error:', err);
-          const detail = err.response?.data?.error || err.response?.data?.message || err.message;
+          const detail =
+            err.response?.data?.error ||
+            err.response?.data?.message ||
+            (typeof err.response?.data === 'string' ? err.response?.data : null) ||
+            err.message;
           setConnectError(detail || 'Error completing GitHub authorization. Please try again.');
           setIsGithubConnected(false);
           // A failed request needs a fresh GitHub authorization code on retry.
