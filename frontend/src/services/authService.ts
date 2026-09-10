@@ -43,8 +43,11 @@ export const authService = {
       const res = await apiClient.post<AuthResponse>('/auth/signup/send-otp', { email, password });
       return res.data;
     } catch (err: any) {
-      const serverMsg = err.response?.data?.message || err.response?.data?.error || err.message;
-      throw new Error(serverMsg || 'Failed to send verification code.');
+      let serverMsg = err.response?.data?.message || err.response?.data?.error;
+      if (!serverMsg || serverMsg === 'Internal Server Error' || serverMsg.includes('500')) {
+        serverMsg = 'Service temporarily unavailable. If you already have an account, please Sign In instead.';
+      }
+      throw new Error(serverMsg);
     }
   },
 
@@ -65,8 +68,11 @@ export const authService = {
       }
       return data;
     } catch (err: any) {
-      const serverMsg = err.response?.data?.message || err.response?.data?.error || err.message;
-      throw new Error(serverMsg || 'OTP verification failed.');
+      let serverMsg = err.response?.data?.message || err.response?.data?.error;
+      if (!serverMsg || serverMsg === 'Internal Server Error') {
+        serverMsg = 'OTP verification failed. Please check the code or request a new OTP.';
+      }
+      throw new Error(serverMsg);
     }
   },
 
@@ -93,8 +99,11 @@ export const authService = {
       }
       return data;
     } catch (err: any) {
-      const serverMsg = err.response?.data?.message || err.response?.data?.error || err.message;
-      throw new Error(serverMsg || 'Invalid credentials.');
+      let serverMsg = err.response?.data?.message || err.response?.data?.error;
+      if (!serverMsg || serverMsg === 'Internal Server Error') {
+        serverMsg = 'Invalid email or password. Please verify your credentials.';
+      }
+      throw new Error(serverMsg);
     }
   },
 

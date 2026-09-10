@@ -77,6 +77,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
 
+  const switchMode = (newMode: ModalMode) => {
+    setMode(newMode);
+    setErrorMessage(null);
+    setStatusMessage(null);
+    setSignUpStep('form');
+  };
+
   useEffect(() => {
     setMode(initialMode);
     setIsComplete(false);
@@ -503,7 +510,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                             Already on PCR?{' '}
                             <button
                               type="button"
-                              onClick={() => setMode('signin')}
+                              onClick={() => switchMode('signin')}
                               className="font-semibold text-[#15803d] hover:text-[#166534] hover:underline transition-colors"
                             >
                               Sign in
@@ -711,7 +718,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         New to PCR?{' '}
                         <button
                           type="button"
-                          onClick={() => setMode('signup')}
+                          onClick={() => switchMode('signup')}
                           className="font-semibold text-[#15803d] hover:text-[#166534] hover:underline transition-colors"
                         >
                           Join now
