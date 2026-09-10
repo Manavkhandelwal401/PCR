@@ -33,7 +33,7 @@ public class AiReviewService {
     @Value("${groq.fallback-model:llama-3.1-8b-instant}")
     private String fallbackModel;
 
-    @Value("${groq.safe-tpm-limit:10000}")
+    @Value("${groq.safe-tpm-limit:50000}")
     private int groqSafeTpmLimit;
 
     @Value("${groq.rpm.limit:30}")
@@ -609,20 +609,19 @@ public class AiReviewService {
             finalScore = Math.min(finalScore, 8.0);
         }
 
-        // Quality rating normalized descriptor
+        // Quality rating descriptor – matches the product-defined severity bands:
+        // >8 = Clean Code, (7,8] = Low Quality, (6,7] = Moderate, [4,6] = High, <4 = Critical
         String qualityTier;
-        if (finalScore >= 9.0) {
-            qualityTier = "Excellent / Production-ready";
-        } else if (finalScore >= 8.0) {
-            qualityTier = "Good";
-        } else if (finalScore >= 7.0) {
-            qualityTier = "Acceptable";
-        } else if (finalScore >= 5.0) {
-            qualityTier = "Needs improvement";
-        } else if (finalScore >= 3.0) {
-            qualityTier = "Poor";
+        if (finalScore > 8.0) {
+            qualityTier = "Clean Code";
+        } else if (finalScore > 7.0) {
+            qualityTier = "Low Quality";
+        } else if (finalScore > 6.0) {
+            qualityTier = "Moderate";
+        } else if (finalScore >= 4.0) {
+            qualityTier = "High";
         } else {
-            qualityTier = "Critical / Unsafe";
+            qualityTier = "Critical";
         }
 
         // Integer qualityRating field for entity compatibility (bounded 1-10, or 0 if empty)
