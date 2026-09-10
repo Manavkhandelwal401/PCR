@@ -1,13 +1,10 @@
 import React, { useMemo } from 'react';
 import {
-  CheckCircle2,
   Bug,
   Shield,
   Zap,
   Cpu,
   Layers,
-  FileCode2,
-  Hash,
   Gauge,
 } from 'lucide-react';
 
@@ -222,17 +219,6 @@ export const StructuredReviewReport: React.FC<StructuredReviewReportProps> = ({ 
       };
     });
   }, [content]);
-
-  // Overall counts for executive scorecard
-  const totalFindings = useMemo(() => {
-    let count = 0;
-    for (const sec of parsedSections) {
-      for (const item of sec.items) {
-        if (!item.isCleanPass) count++;
-      }
-    }
-    return count;
-  }, [parsedSections]);
 
   if (!content || !content.trim()) {
     return (
