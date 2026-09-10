@@ -486,8 +486,12 @@ public class AuthController {
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.error("GitHub OAuth authorization error during token exchange or profile resolution:", e);
+            String detailedMsg = e.getMessage();
+            if (e instanceof org.springframework.web.client.HttpStatusCodeException httpEx) {
+                detailedMsg = httpEx.getStatusCode() + ": " + httpEx.getResponseBodyAsString();
+            }
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of(
-                    "error", "GitHub OAuth authorization failed: " + e.getMessage()
+                    "error", "GitHub OAuth authorization failed: " + detailedMsg
             ));
         }
     }

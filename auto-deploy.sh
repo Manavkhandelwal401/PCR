@@ -26,7 +26,12 @@ deploy_all() {
         --image "$REGISTRY_URL/backend:latest" \
         --platform managed \
         --region $REGION \
-        --allow-unauthenticated
+        --allow-unauthenticated \
+        --port 8080 \
+        --timeout 300s \
+        --memory 1Gi \
+        --cpu 1 \
+        --update-env-vars "SPRING_PROFILES_ACTIVE=prod,GITHUB_OAUTH_CLIENT_ID=Ov23liz7VeylLeQwQIjk,GITHUB_OAUTH_CLIENT_SECRET=7cb961f73166a9fd4a72f137bbfcaa3ecd1fd1ec,GITHUB_OAUTH_REDIRECT_URI=$FRONTEND_URL/repositories,APP_CORS_ALLOWED_ORIGINS=*"
 
     # 2. Build and Deploy Frontend via Cloud Build
     echo "--> [2/2] Building and Deploying Frontend via Cloud Build..."
