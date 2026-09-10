@@ -463,14 +463,19 @@ public class AuthController {
                 jwtToken = authService.generateUserToken(user.getEmail(), user.getRole());
             }
 
-            // 4. Fetch user repositories
-            ResponseEntity<java.util.List> reposResponse = restTemplate.exchange(
-                    "https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member",
-                    org.springframework.http.HttpMethod.GET,
-                    userEntity,
-                    java.util.List.class
-            );
-            java.util.List reposData = reposResponse.getBody();
+            // 4. Fetch user repositories (safely handled if GitHub API rate limits or errors)
+            java.util.List reposData = null;
+            try {
+                ResponseEntity<java.util.List> reposResponse = restTemplate.exchange(
+                        "https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member",
+                        org.springframework.http.HttpMethod.GET,
+                        userEntity,
+                        java.util.List.class
+                );
+                reposData = reposResponse.getBody();
+            } catch (Exception repoEx) {
+                log.warn("Notice: Unable to preload GitHub repositories during OAuth callback: {}", repoEx.getMessage());
+            }
 
             java.util.Map<String, Object> result = new java.util.HashMap<>();
             result.put("success", true);
