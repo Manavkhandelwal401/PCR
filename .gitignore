@@ -34,5 +34,10 @@ github-oauth.properties
 local.properties
 **/local.properties
 *.pem
-.env
-.env.local
+# Test scratch files & reports
+package.json
+package-lock.json
+pcr_e2e_test.py
+e2e_summary.json
+screenshots/
+tmp_uploads/

@@ -34,20 +34,30 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origins:http://localhost:5173}")
+    @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origins:*}")
     private String allowedOriginsConfig;
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Split comma-separated origins from application configuration
         List<String> origins = Arrays.stream(allowedOriginsConfig.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toList();
 
-        configuration.setAllowedOrigins(origins);
+        if (origins.contains("*")) {
+            configuration.addAllowedOriginPattern("*");
+        } else {
+            for (String origin : origins) {
+                if (origin.contains("*")) {
+                    configuration.addAllowedOriginPattern(origin);
+                } else {
+                    configuration.addAllowedOrigin(origin);
+                }
+            }
+        }
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
         configuration.setAllowCredentials(true);
@@ -58,3 +68,4 @@ public class SecurityConfig {
         return source;
     }
 }
+
