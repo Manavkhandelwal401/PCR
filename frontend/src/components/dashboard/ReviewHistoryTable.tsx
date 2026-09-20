@@ -29,13 +29,19 @@ export const ReviewHistoryTable: React.FC<ReviewHistoryTableProps> = ({
   const formatDate = (isoString?: string): string => {
     if (!isoString) return '-';
     try {
-      const date = new Date(isoString);
-      return new Intl.DateTimeFormat('en-US', {
+      // Backend returns UTC timestamps without 'Z' (e.g. "2026-09-20T09:19:00").
+      // Append 'Z' if missing so Date constructor correctly treats it as UTC and converts to browser local time (IST).
+      let normalized = isoString.trim();
+      if (!normalized.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(normalized)) {
+        normalized += 'Z';
+      }
+      const date = new Date(normalized);
+      return new Intl.DateTimeFormat(undefined, {
         month: 'short',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false,
+        hour12: true,
       }).format(date);
     } catch {
       return isoString;

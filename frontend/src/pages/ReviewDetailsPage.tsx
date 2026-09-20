@@ -83,15 +83,19 @@ export const ReviewDetailsPage: React.FC = () => {
   const formatDate = (isoString?: string): string => {
     if (!isoString) return '-';
     try {
-      const date = new Date(isoString);
-      return new Intl.DateTimeFormat('en-US', {
+      let normalized = isoString.trim();
+      if (!normalized.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(normalized)) {
+        normalized += 'Z';
+      }
+      const date = new Date(normalized);
+      return new Intl.DateTimeFormat(undefined, {
         year: 'numeric',
         month: 'short',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
-        hour12: false,
+        hour12: true,
       }).format(date);
     } catch {
       return isoString;
