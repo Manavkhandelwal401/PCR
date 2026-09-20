@@ -170,8 +170,8 @@ export const RepositoriesPage: React.FC = () => {
       }
     } catch (err: any) {
       console.warn('Could not sync repositories from backend:', err);
-      // Fallback to initiating GitHub OAuth re-auth
-      initiateGithubOAuth();
+      const detail = err.response?.data?.error || err.message || 'Unable to sync repositories.';
+      setConnectError(detail);
     } finally {
       setIsFetchingGithub(false);
     }
