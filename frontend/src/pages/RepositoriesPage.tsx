@@ -150,7 +150,9 @@ export const RepositoriesPage: React.FC = () => {
   // Sync to user-namespaced local storage whenever repos list updates
   useEffect(() => {
     if (userEmail && userEmail !== 'anonymous') {
-      localStorage.setItem(GH_REPOS_KEY, JSON.stringify(repos));
+      if (repos.length > 0) {
+        localStorage.setItem(GH_REPOS_KEY, JSON.stringify(repos));
+      }
     }
   }, [repos, GH_REPOS_KEY, userEmail]);
 
@@ -283,6 +285,12 @@ export const RepositoriesPage: React.FC = () => {
             localStorage.setItem(`pcr_gh_repos_${authedKey}`, JSON.stringify(repoList));
             localStorage.setItem(`pcr_user_gh_${authedKey}`, userData.login);
 
+            // Also synchronize current session keys if keys differ
+            localStorage.setItem(GH_CONNECTED_KEY, 'true');
+            localStorage.setItem(GH_PROFILE_KEY, JSON.stringify(profileData));
+            localStorage.setItem(GH_REPOS_KEY, JSON.stringify(repoList));
+            localStorage.setItem(GH_USER_KEY, userData.login);
+
             if (data.repositoriesFetchFailed) {
               setConnectError('GitHub account connected, but repositories could not be fetched. Check backend logs for GitHub API details.');
             }
@@ -344,6 +352,11 @@ export const RepositoriesPage: React.FC = () => {
     if (userEmail && userEmail !== 'anonymous') {
       import('../services/authService').then(({ authService }) => {
         authService.checkAuth().then((authData) => {
+          // Do not wipe credentials if OAuth callback is currently executing or just exchanged
+          const hasCodeInUrl = new URLSearchParams(window.location.search).has('code');
+          if (hasCodeInUrl || oauthExchangedRef.current || isFetchingGithub) {
+            return;
+          }
           if (authData.authenticated && authData.githubConnected === false) {
             setIsGithubConnected(false);
             setGhProfile(null);

@@ -475,18 +475,34 @@ public class AuthController {
 
                 org.springframework.http.HttpEntity<Void> repoEntity = new org.springframework.http.HttpEntity<>(repoHeaders);
 
+                // Note: In GitHub REST API, visibility cannot be combined with affiliation.
+                // Requesting affiliation=owner,collaborator,organization_member with sort=updated & per_page=100 returns all accessible repos (both public & private).
                 ResponseEntity<java.util.List> reposResponse = restTemplate.exchange(
-                        "https://api.github.com/user/repos" +
-                                "?visibility=all" +
-                                "&affiliation=owner,collaborator,organization_member" +
-                                "&sort=updated" +
-                                "&per_page=100",
+                        "https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member",
                         org.springframework.http.HttpMethod.GET,
                         repoEntity,
                         java.util.List.class
                 );
 
                 reposData = reposResponse.getBody();
+                
+                // Fallback query without affiliation filter if initial returned empty or null
+                if (reposData == null || reposData.isEmpty()) {
+                    try {
+                        ResponseEntity<java.util.List> fallbackResponse = restTemplate.exchange(
+                                "https://api.github.com/user/repos?per_page=100&sort=updated",
+                                org.springframework.http.HttpMethod.GET,
+                                repoEntity,
+                                java.util.List.class
+                        );
+                        if (fallbackResponse.getBody() != null && !fallbackResponse.getBody().isEmpty()) {
+                            reposData = fallbackResponse.getBody();
+                        }
+                    } catch (Exception fbEx) {
+                        log.warn("Fallback GitHub /user/repos query failed: {}", fbEx.getMessage());
+                    }
+                }
+
                 log.info("GITHUB REPOSITORIES RESPONSE RECEIVED: status={}, count={}",
                         reposResponse.getStatusCode(),
                         reposData != null ? reposData.size() : 0);
