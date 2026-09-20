@@ -85,8 +85,10 @@ export const RepositoriesPage: React.FC = () => {
   const GH_REPOS_KEY = `pcr_gh_repos_${userKey}`;
   const GH_USER_KEY = `pcr_user_gh_${userKey}`;
 
-  // Active view tab: 'connected' (default) vs 'all'
-  const [activeTab, setActiveTab] = useState<'connected' | 'all'>('connected');
+  // Active view tab: defaults to 'all' if GitHub is connected, otherwise 'connected'
+  const [activeTab, setActiveTab] = useState<'connected' | 'all'>(() => {
+    return localStorage.getItem(GH_CONNECTED_KEY) === 'true' ? 'all' : 'connected';
+  });
 
   // GitHub connection state (isolated per user in localStorage)
   const [isGithubConnected, setIsGithubConnected] = useState<boolean>(() => {
@@ -280,6 +282,10 @@ export const RepositoriesPage: React.FC = () => {
             localStorage.setItem(`pcr_gh_profile_${authedKey}`, JSON.stringify(profileData));
             localStorage.setItem(`pcr_gh_repos_${authedKey}`, JSON.stringify(repoList));
             localStorage.setItem(`pcr_user_gh_${authedKey}`, userData.login);
+
+            if (data.repositoriesFetchFailed) {
+              setConnectError('GitHub account connected, but repositories could not be fetched. Check backend logs for GitHub API details.');
+            }
 
             // If user initiated OAuth from the sign-in modal, redirect them smoothly to dashboard
             const authRedirect = sessionStorage.getItem('pcr_auth_redirect');

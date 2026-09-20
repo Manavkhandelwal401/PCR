@@ -463,23 +463,41 @@ public class AuthController {
                 jwtToken = authService.generateUserToken(user.getEmail(), user.getRole());
             }
 
-            // 4. Fetch user repositories (safely handled if GitHub API rate limits or errors)
+            // 4. Fetch user repositories with explicit API version, User-Agent, and robust logging
             java.util.List reposData = null;
             try {
+                org.springframework.http.HttpHeaders repoHeaders = new org.springframework.http.HttpHeaders();
+                repoHeaders.setBearerAuth(accessToken);
+                repoHeaders.set("Accept", "application/vnd.github+json");
+                repoHeaders.set("X-GitHub-Api-Version", "2022-11-28");
+                repoHeaders.set("User-Agent", "Phantom-Code-Reviewer");
+
+                org.springframework.http.HttpEntity<Void> repoEntity = new org.springframework.http.HttpEntity<>(repoHeaders);
+
                 ResponseEntity<java.util.List> reposResponse = restTemplate.exchange(
-                        "https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member",
+                        "https://api.github.com/user/repos" +
+                                "?visibility=all" +
+                                "&affiliation=owner,collaborator,organization_member" +
+                                "&sort=updated" +
+                                "&per_page=100",
                         org.springframework.http.HttpMethod.GET,
-                        userEntity,
+                        repoEntity,
                         java.util.List.class
                 );
+
                 reposData = reposResponse.getBody();
+                log.info("GitHub repositories fetched successfully. Count={}", reposData != null ? reposData.size() : 0);
+
+            } catch (org.springframework.web.client.HttpStatusCodeException repoEx) {
+                log.error("GitHub /user/repos failed. Status={}, Body={}", repoEx.getStatusCode(), repoEx.getResponseBodyAsString());
             } catch (Exception repoEx) {
-                log.warn("Notice: Unable to preload GitHub repositories during OAuth callback: {}", repoEx.getMessage());
+                log.error("Unexpected error while fetching GitHub repositories", repoEx);
             }
 
             java.util.Map<String, Object> result = new java.util.HashMap<>();
             result.put("success", true);
             result.put("hasPrivateAccess", true);
+            result.put("repositoriesFetchFailed", reposData == null);
             result.put("token", jwtToken);
             if (user != null) {
                 result.put("email", user.getEmail());
