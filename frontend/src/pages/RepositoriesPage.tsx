@@ -139,7 +139,7 @@ export const RepositoriesPage: React.FC = () => {
       localStorage.setItem('pcr_oauth_state', state);
       sessionStorage.setItem('pcr_oauth_state', state);
       // prompt=consent forces GitHub to re-render authorization screen, preventing silent/auto-login into previous user's GitHub session
-      const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_OAUTH_CLIENT_ID}&redirect_uri=${encodeURIComponent(GITHUB_OAUTH_REDIRECT_URI)}&scope=read:user,repo&state=${encodeURIComponent(state)}&prompt=select_account`;
+      const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_OAUTH_CLIENT_ID}&redirect_uri=${encodeURIComponent(GITHUB_OAUTH_REDIRECT_URI)}&scope=${encodeURIComponent('read:user user:email repo')}&state=${encodeURIComponent(state)}&prompt=select_account`;
       window.location.href = authUrl;
     } catch (e: any) {
       console.error('Failed to obtain server-signed OAuth state:', e);

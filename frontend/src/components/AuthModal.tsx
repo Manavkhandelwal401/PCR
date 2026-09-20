@@ -213,7 +213,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_OAUTH_CLIENT_ID}&redirect_uri=${encodeURIComponent(
           GITHUB_OAUTH_REDIRECT_URI
-        )}&scope=read:user,user:email,repo&state=${encodeURIComponent(state)}&prompt=select_account`;
+        )}&scope=${encodeURIComponent('read:user user:email repo')}&state=${encodeURIComponent(state)}&prompt=select_account`;
 
         window.location.href = authUrl;
       } catch (err: any) {

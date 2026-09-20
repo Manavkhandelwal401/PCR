@@ -355,6 +355,8 @@ public class AuthController {
             }
 
             String accessToken = (String) tokenMap.get("access_token");
+            String grantedScope = (String) tokenMap.get("scope");
+            log.info("GitHub OAuth token exchange granted scope: {}", grantedScope);
 
             // 2. Fetch authenticated GitHub user profile
             org.springframework.http.HttpHeaders userHeaders = new org.springframework.http.HttpHeaders();

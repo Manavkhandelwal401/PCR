@@ -320,7 +320,7 @@ export const SettingsPage: React.FC = () => {
       const clientId = import.meta.env.VITE_GITHUB_OAUTH_CLIENT_ID || 'Ov23liz7VeylLeQwQIjk';
       const redirectUri = import.meta.env.VITE_GITHUB_OAUTH_REDIRECT_URI || 
         (typeof window !== 'undefined' ? `${window.location.origin}/repositories` : 'http://localhost:5173/repositories');
-      const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user,repo&state=${encodeURIComponent(state)}`;
+      const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent('read:user user:email repo')}&state=${encodeURIComponent(state)}`;
       window.location.href = authUrl;
     } catch (e) {
       console.error('Failed to obtain server-signed OAuth state:', e);
