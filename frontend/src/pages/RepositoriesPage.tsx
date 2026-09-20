@@ -125,58 +125,6 @@ export const RepositoriesPage: React.FC = () => {
   const [connectingRepoId, setConnectingRepoId] = useState<string | number | null>(null);
   const oauthExchangedRef = useRef<boolean>(false);
 
-  // Function to sync repositories on-demand using backend stored GitHub access token
-  const syncGitHubAccountRepositories = async () => {
-    setIsFetchingGithub(true);
-    setConnectError(null);
-    try {
-      const { getGithubAccountRepositoriesApi, getConnectedRepositoriesApi } = await import('../api/apiClient');
-      const res = await getGithubAccountRepositoriesApi();
-      if (res && res.repositories) {
-        const rawList = res.repositories;
-        const mappedRepos: GithubRepo[] = rawList.map((r: any, idx: number) => ({
-          id: r.id || idx,
-          name: r.name,
-          fullName: r.full_name,
-          description: r.description || 'Repository authorized via GitHub account.',
-          defaultBranch: r.default_branch || 'main',
-          language: r.language || 'Code',
-          stars: r.stargazers_count || 0,
-          isPrivate: r.private || false,
-          htmlUrl: r.html_url,
-          connected: false,
-        }));
-
-        try {
-          const backendConnected = await getConnectedRepositoriesApi();
-          if (backendConnected && backendConnected.length > 0) {
-            const connectedMap = new Map(backendConnected.map((b) => [b.fullName.toLowerCase(), b.id]));
-            mappedRepos.forEach((r) => {
-              const dbId = connectedMap.get(r.fullName.toLowerCase());
-              if (dbId !== undefined) {
-                r.connected = true;
-                r.connectedRepositoryId = dbId;
-              }
-            });
-          }
-        } catch (e) {
-          // ignore connected check error
-        }
-
-        setRepos(mappedRepos);
-        if (userEmail && userEmail !== 'anonymous') {
-          localStorage.setItem(GH_REPOS_KEY, JSON.stringify(mappedRepos));
-        }
-      }
-    } catch (err: any) {
-      console.warn('Could not sync repositories from backend:', err);
-      const detail = err.response?.data?.error || err.message || 'Unable to sync repositories.';
-      setConnectError(detail);
-    } finally {
-      setIsFetchingGithub(false);
-    }
-  };
-
   // Function to initiate secure OAuth with CSRF state parameter & explicit re-consent
   const initiateGithubOAuth = async () => {
     try {
@@ -424,14 +372,6 @@ export const RepositoriesPage: React.FC = () => {
           })
           .catch((err) => console.log('Notice: Could not load backend connected repos yet:', err));
       });
-
-      // If user is connected to GitHub but no repositories are currently cached, auto-fetch them
-      if (localStorage.getItem(GH_CONNECTED_KEY) === 'true') {
-        const saved = localStorage.getItem(GH_REPOS_KEY);
-        if (!saved || JSON.parse(saved || '[]').length === 0) {
-          syncGitHubAccountRepositories();
-        }
-      }
     }
   }, [userEmail, GH_CONNECTED_KEY, GH_PROFILE_KEY, GH_REPOS_KEY, GH_USER_KEY]);
 
@@ -613,12 +553,11 @@ export const RepositoriesPage: React.FC = () => {
           <div className="flex items-center gap-2.5">
             <button
               type="button"
-              onClick={syncGitHubAccountRepositories}
-              disabled={isFetchingGithub}
-              className="inline-flex items-center gap-1.5 rounded-[5px] border border-[#1b3324] bg-[#122519] px-2.5 py-1 text-[11px] text-[#A5B8AA] hover:text-[#EEF4EF] transition-colors disabled:opacity-50"
+              onClick={initiateGithubOAuth}
+              className="inline-flex items-center gap-1.5 rounded-[5px] border border-[#1b3324] bg-[#122519] px-2.5 py-1 text-[11px] text-[#A5B8AA] hover:text-[#EEF4EF] transition-colors"
             >
-              <RefreshCw className={`h-3 w-3 ${isFetchingGithub ? 'animate-spin' : ''}`} />
-              <span>{isFetchingGithub ? 'Syncing...' : 'Sync Repos'}</span>
+              <RefreshCw className="h-3 w-3" />
+              <span>Sync Repos</span>
             </button>
             <button
               type="button"

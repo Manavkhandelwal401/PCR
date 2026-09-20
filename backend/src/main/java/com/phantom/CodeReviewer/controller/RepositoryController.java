@@ -40,7 +40,6 @@ public class RepositoryController {
     private final com.phantom.CodeReviewer.service.GitHubService gitHubService;
     private final com.phantom.CodeReviewer.repository.ReviewRepository reviewRepository;
     private final com.phantom.CodeReviewer.service.LocalReviewAsyncService localReviewAsyncService;
-    private final org.springframework.web.client.RestTemplate restTemplate;
 
     public record ConnectRepoRequest(
             String fullName,
@@ -163,52 +162,6 @@ public class RepositoryController {
 
         List<ConnectedRepository> list = connectedRepositoryRepository.findByUserIdOrderByCreatedAtDesc(userEmail);
         return ResponseEntity.ok(list.stream().filter(r -> "CONNECTED".equalsIgnoreCase(r.getStatus())).toList());
-    }
-
-    /**
-     * 3b. Fetch all GitHub repositories for authenticated user using stored GitHub access token.
-     * GET /api/v1/repositories/github-repos
-     */
-    @GetMapping("/github-repos")
-    public ResponseEntity<?> getGithubAccountRepositories(
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-
-        String userEmail = extractEmailFromAuthHeader(authHeader);
-        if (userEmail == null || userEmail.isBlank()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Authentication required."));
-        }
-
-        Optional<User> userOpt = userRepository.findByEmail(userEmail);
-        if (userOpt.isEmpty() || userOpt.get().getGithubAccessToken() == null || userOpt.get().getGithubAccessToken().isBlank()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                    "error", "No connected GitHub account found. Please connect your GitHub account."
-            ));
-        }
-
-        String accessToken = userOpt.get().getGithubAccessToken();
-        try {
-            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-            headers.set("Authorization", "Bearer " + accessToken);
-            headers.set("Accept", "application/vnd.github.v3+json");
-            org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
-
-            ResponseEntity<List> response = restTemplate.exchange(
-                    "https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member",
-                    org.springframework.http.HttpMethod.GET,
-                    entity,
-                    List.class
-            );
-
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "repositories", response.getBody() != null ? response.getBody() : List.of()
-            ));
-        } catch (Exception e) {
-            log.error("Failed to fetch repositories from GitHub for user {}: {}", userEmail, e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of(
-                    "error", "Failed to retrieve repositories from GitHub: " + e.getMessage()
-            ));
-        }
     }
 
     /**

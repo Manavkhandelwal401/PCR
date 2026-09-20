@@ -262,11 +262,6 @@ export async function triggerSingleFileReviewApi(repoId: number, filePath: strin
   return response.data;
 }
 
-export async function getGithubAccountRepositoriesApi(): Promise<{ success: boolean; repositories: any[] }> {
-  const response = await apiClient.get<{ success: boolean; repositories: any[] }>('/repositories/github-repos');
-  return response.data;
-}
-
 export default apiClient;
 
 
