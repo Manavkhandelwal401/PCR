@@ -14,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.web.client.RestTemplate;
 import lombok.extern.slf4j.Slf4j;
 
@@ -540,6 +542,81 @@ public class AuthController {
                     "error", "GitHub OAuth authorization failed: " + detailedMsg
             ));
         }
+    }
+
+    /**
+     * Reload repositories for an already-linked GitHub account.
+     *
+     * OAuth callback responses are deliberately short lived; keeping this as a
+     * separate authenticated endpoint means the Repositories page can recover
+     * from a failed/empty callback fetch and can sync later without asking the
+     * user to go through OAuth again.
+     */
+    @GetMapping("/github/repositories")
+    public ResponseEntity<?> getGithubRepositories(
+            @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+        String email = authService.extractEmailFromAuthHeader(authHeader);
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(java.util.Map.of("error", "Authentication required."));
+        }
+
+        Optional<User> userOpt = userRepository.findByEmail(email.toLowerCase().trim());
+        String accessToken = userOpt.map(User::getGithubAccessToken).orElse(null);
+        if (accessToken == null || accessToken.isBlank()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(java.util.Map.of(
+                    "error", "GitHub is not connected. Please connect your GitHub account first."
+            ));
+        }
+
+        try {
+            return ResponseEntity.ok(java.util.Map.of("repositories", fetchGithubRepositories(accessToken)));
+        } catch (org.springframework.web.client.HttpStatusCodeException ex) {
+            log.warn("GitHub repository sync failed for {}: {}", email, ex.getStatusCode());
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(java.util.Map.of(
+                    "error", "GitHub could not load your repositories. Please reconnect GitHub and try again."
+            ));
+        } catch (Exception ex) {
+            log.error("Unexpected GitHub repository sync failure for {}", email, ex);
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(java.util.Map.of(
+                    "error", "Unable to sync GitHub repositories right now. Please try again."
+            ));
+        }
+    }
+
+    /** Fetch every repository the OAuth token can access (GitHub returns 30 by default). */
+    private List<java.util.Map> fetchGithubRepositories(String accessToken) {
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        headers.set("Accept", "application/vnd.github+json");
+        headers.set("X-GitHub-Api-Version", "2022-11-28");
+        headers.set("User-Agent", "Phantom-Code-Reviewer");
+        org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
+
+        List<java.util.Map> repositories = new ArrayList<>();
+        for (int page = 1; page <= 100; page++) {
+            ResponseEntity<List> response = restTemplate.exchange(
+                    "https://api.github.com/user/repos?per_page=100&page=" + page
+                            + "&sort=updated&affiliation=owner,collaborator,organization_member",
+                    org.springframework.http.HttpMethod.GET,
+                    entity,
+                    List.class
+            );
+            List pageItems = response.getBody();
+            if (pageItems == null || pageItems.isEmpty()) {
+                break;
+            }
+            for (Object item : pageItems) {
+                if (item instanceof java.util.Map repo) {
+                    repositories.add(repo);
+                }
+            }
+            if (pageItems.size() < 100) {
+                break;
+            }
+        }
+        return repositories;
     }
 
     /**

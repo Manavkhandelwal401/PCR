@@ -41,7 +41,7 @@ apiClient.interceptors.response.use(
       // Clear all auth storage tokens
       localStorage.removeItem('pcr_token');
       localStorage.removeItem('pcr_user_email');
-      
+
       // Redirect to landing page if not already there
       if (window.location.pathname !== '/') {
         window.location.href = '/';
@@ -205,6 +205,11 @@ export async function disconnectRepositoryApi(fullName: string): Promise<{ succe
 export async function getConnectedRepositoriesApi(): Promise<ConnectedRepoResponse[]> {
   const response = await apiClient.get<ConnectedRepoResponse[]>('/repositories/connected');
   return response.data;
+}
+
+export async function getGithubRepositoriesApi(): Promise<unknown[]> {
+  const response = await apiClient.get<{ repositories: unknown[] }>('/auth/github/repositories');
+  return Array.isArray(response.data.repositories) ? response.data.repositories : [];
 }
 
 export async function triggerUserReviewApi(repoId: number): Promise<{ success: boolean; jobId: string; totalFiles: number; message: string }> {

@@ -28,7 +28,7 @@ const GITHUB_APP_URL = 'https://github.com/apps/phantom-code-reviewer';
 // These values must match the OAuth app configuration.  Production builds set
 // VITE_GITHUB_OAUTH_*; the defaults keep the checked-out app usable locally.
 const GITHUB_OAUTH_CLIENT_ID = import.meta.env.VITE_GITHUB_OAUTH_CLIENT_ID || 'Ov23liz7VeylLeQwQIjk';
-const GITHUB_OAUTH_REDIRECT_URI = import.meta.env.VITE_GITHUB_OAUTH_REDIRECT_URI || 
+const GITHUB_OAUTH_REDIRECT_URI = import.meta.env.VITE_GITHUB_OAUTH_REDIRECT_URI ||
   (typeof window !== 'undefined' ? `${window.location.origin}/repositories` : 'http://localhost:5173/repositories');
 
 // Official GitHub Mark SVG
@@ -126,6 +126,41 @@ export const RepositoriesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [connectingRepoId, setConnectingRepoId] = useState<string | number | null>(null);
   const oauthExchangedRef = useRef<boolean>(false);
+
+  const toGithubRepos = (rawRepos: unknown[]): GithubRepo[] => rawRepos.map((raw: any, idx: number) => ({
+    id: raw.id || idx,
+    name: raw.name,
+    fullName: raw.full_name,
+    description: raw.description || 'Repository authorized via GitHub account.',
+    defaultBranch: raw.default_branch || 'main',
+    language: raw.language || 'Code',
+    stars: raw.stargazers_count || 0,
+    isPrivate: raw.private || false,
+    htmlUrl: raw.html_url,
+    connected: false,
+  })).filter((repo) => Boolean(repo.name && repo.fullName));
+
+  const syncGithubRepositories = async () => {
+    setIsFetchingGithub(true);
+    setConnectError(null);
+    try {
+      const { getGithubRepositoriesApi } = await import('../api/apiClient');
+      const repoList = toGithubRepos(await getGithubRepositoriesApi());
+      setRepos((current) => {
+        const connectedByName = new Map(current.filter((repo) => repo.connected).map((repo) => [repo.fullName.toLowerCase(), repo]));
+        return repoList.map((repo) => {
+          const connected = connectedByName.get(repo.fullName.toLowerCase());
+          return connected ? { ...repo, connected: true, connectedRepositoryId: connected.connectedRepositoryId } : repo;
+        });
+      });
+      setActiveTab('all');
+    } catch (err: any) {
+      const message = err?.response?.data?.error || 'GitHub repositories could not be synced. Please reconnect GitHub and try again.';
+      setConnectError(message);
+    } finally {
+      setIsFetchingGithub(false);
+    }
+  };
 
   // Function to initiate secure OAuth with CSRF state parameter & explicit re-consent
   const initiateGithubOAuth = async () => {
@@ -250,18 +285,7 @@ export const RepositoriesPage: React.FC = () => {
 
             let repoList: GithubRepo[] = [];
             if (Array.isArray(data.repositories)) {
-              repoList = data.repositories.map((r: any, idx: number) => ({
-                id: r.id || idx,
-                name: r.name,
-                fullName: r.full_name,
-                description: r.description || 'Repository authorized via GitHub account.',
-                defaultBranch: r.default_branch || 'main',
-                language: r.language || 'Code',
-                stars: r.stargazers_count || 0,
-                isPrivate: r.private || false,
-                htmlUrl: r.html_url,
-                connected: false,
-              }));
+              repoList = toGithubRepos(data.repositories);
             }
 
             // If this was a 1-click GitHub login/signup flow, save JWT session
@@ -393,6 +417,14 @@ export const RepositoriesPage: React.FC = () => {
       });
     }
   }, [userEmail, GH_CONNECTED_KEY, GH_PROFILE_KEY, GH_REPOS_KEY, GH_USER_KEY]);
+
+  // Restore the authoritative list from GitHub after a successful link. This
+  // also repairs old sessions that saved an empty callback response.
+  useEffect(() => {
+    if (isGithubConnected && userEmail && userEmail !== 'anonymous' && repos.length === 0 && !isFetchingGithub) {
+      void syncGithubRepositories();
+    }
+  }, [isGithubConnected, userEmail]);
 
   // Handler: Connect a single repository to active connected list and trigger background intelligence
   const handleConnectRepo = async (repo: GithubRepo) => {
@@ -572,7 +604,7 @@ export const RepositoriesPage: React.FC = () => {
           <div className="flex items-center gap-2.5">
             <button
               type="button"
-              onClick={initiateGithubOAuth}
+              onClick={syncGithubRepositories}
               className="inline-flex items-center gap-1.5 rounded-[5px] border border-[#1b3324] bg-[#122519] px-2.5 py-1 text-[11px] text-[#A5B8AA] hover:text-[#EEF4EF] transition-colors"
             >
               <RefreshCw className="h-3 w-3" />
