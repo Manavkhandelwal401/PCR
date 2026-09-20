@@ -466,6 +466,7 @@ public class AuthController {
             // 4. Fetch user repositories with explicit API version, User-Agent, and robust logging
             java.util.List reposData = null;
             try {
+                log.info("ABOUT TO FETCH GITHUB REPOSITORIES");
                 org.springframework.http.HttpHeaders repoHeaders = new org.springframework.http.HttpHeaders();
                 repoHeaders.setBearerAuth(accessToken);
                 repoHeaders.set("Accept", "application/vnd.github+json");
@@ -486,7 +487,9 @@ public class AuthController {
                 );
 
                 reposData = reposResponse.getBody();
-                log.info("GitHub repositories fetched successfully. Count={}", reposData != null ? reposData.size() : 0);
+                log.info("GITHUB REPOSITORIES RESPONSE RECEIVED: status={}, count={}",
+                        reposResponse.getStatusCode(),
+                        reposData != null ? reposData.size() : 0);
 
             } catch (org.springframework.web.client.HttpStatusCodeException repoEx) {
                 log.error("GitHub /user/repos failed. Status={}, Body={}", repoEx.getStatusCode(), repoEx.getResponseBodyAsString());
